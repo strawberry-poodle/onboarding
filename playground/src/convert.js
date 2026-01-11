@@ -11,18 +11,48 @@ const defaults = JSON.parse(
   readFileSync(join(__dirname, "../config/defaults.json"), "utf-8")
 );
 
+function roundToPrecision(value, precision) {
+  return Number.parseFloat(value.toFixed(precision));
+}
+
 export function convert(type, value, from, to) {
+  // Validate numeric input
+  // Check for invalid types that Number() would convert to 0
+  if (value === "" || value === null || Array.isArray(value)) {
+    throw new Error("Invalid number: value must be a valid numeric value");
+  }
+
+  const numValue = Number(value);
+  if (isNaN(numValue) || !isFinite(numValue)) {
+    throw new Error("Invalid number: value must be a valid numeric value");
+  }
+
+  // Validate unit codes before applying defaults
+  // Reject empty string and null explicitly
+  if (from === "" || from === null) {
+    throw new Error(`Unknown unit code: ${from}`);
+  }
+
   switch (type) {
     case "temperature":
-      return temperature.convertTemperature(
-        value,
-        from || defaults.temperature.defaultFrom,
-        to || defaults.temperature.defaultTo
+      return roundToPrecision(
+        temperature.convertTemperature(
+          numValue,
+          from || defaults.temperature.defaultFrom,
+          to || defaults.temperature.defaultTo
+        ),
+        defaults.precision
       );
     case "distance":
-      return distance.convertDistance(value, from, to);
+      return roundToPrecision(
+        distance.convertDistance(numValue, from, to),
+        defaults.precision
+      );
     case "weight":
-      return weight.convertWeight(value, from, to);
+      return roundToPrecision(
+        weight.convertWeight(numValue, from, to),
+        defaults.precision
+      );
     default:
       throw new Error("Unknown type " + type);
   }
